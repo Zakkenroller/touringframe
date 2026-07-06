@@ -3,7 +3,12 @@ name: Daily bike sweep
 on:
   schedule:
     - cron: "0 15 * * *"
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      debug_craigslist:
+        description: "Dump raw craigslist HTML instead of running the sweep"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -19,6 +24,22 @@ jobs:
           python-version: "3.12"
 
       - run: pip install -r requirements.txt
+
+      - name: Debug craigslist page structure
+        if: github.event.inputs.debug_craigslist == 'true'
+        run: |
+          python3 - <<'EOF'
+          import httpx
+          urls = [
+              "https://sfbay.craigslist.org/search/bia?query=Trek+720",
+          ]
+          with httpx.Client(follow_redirects=True) as c:
+              for url in urls:
+                  r = c.get(url, headers={"User-Agent": "Mozilla/5.0 (vintage-bike-agent)"}, timeout=15)
+                  print(f"=== {url} -> final {r.url} status {r.status_code} ===")
+                  print(r.text[:6000])
+                  print("=== END SNIPPET ===")
+          EOF
 
       - name: Run sweep
         env:
