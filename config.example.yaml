@@ -1,0 +1,81 @@
+# ---------------------------------------------------------------------------
+# Vintage touring frame tracker — configuration
+# Copy to config.yaml and fill in secrets. config.yaml is gitignored.
+# In GitHub Actions, secrets are injected via environment variables instead
+# (EBAY_CLIENT_ID, EBAY_CLIENT_SECRET, DISCORD_WEBHOOK_URL).
+# ---------------------------------------------------------------------------
+
+# Target models. Each entry has a display name and a regex (case-insensitive)
+# applied to listing titles/descriptions. Patterns are deliberately strict to
+# avoid false positives (e.g. Trek 7200 hybrids, ubiquitous "700c" wheels).
+targets:
+  - name: "Trek 720"
+    pattern: '\btrek\b.{0,40}\b720\b(?!\d)'
+  - name: "Bridgestone T-700"
+    pattern: '\bt[-\s]?700\b(?!c)'
+  - name: "Bridgestone 400"
+    pattern: '\bbridgestone\b.{0,40}\b400\b(?!\d)'
+  - name: "Miyata 1000"
+    pattern: '\bmiyata\b.{0,40}\b1000\s?(lt)?\b'
+
+# Search queries fanned out to each source. Broader than the target regexes
+# on purpose — sellers misspell and under-describe; the filter engine decides.
+queries:
+  - "Trek 720"
+  - "Bridgestone T700"
+  - "Bridgestone touring"
+  - "Miyata 1000"
+  - "vintage touring frame"
+
+sizing:
+  # 56cm target. Vintage measurement conventions vary (c-c vs c-t), so the
+  # default window is 55-57cm and the imperial equivalents 22" / 22.5".
+  cm_values: [55, 56, 57]
+  inch_values: ["22", "22.5"]
+  # Behavior when no size is detectable in the listing text:
+  #   notify  -> alert anyway, flagged "size unknown — verify" (recommended:
+  #              these models are rare; don't miss one over a lazy seller)
+  #   drop    -> only alert on confirmed size matches
+  unknown_size: notify
+
+# Listings containing any of these are dropped immediately.
+exclusions:
+  - carbon
+  - aluminum
+  - alloy frame
+  - fixie
+  - single speed
+  - singlespeed
+  - track bike
+  - "7200"        # Trek 7200 hybrid
+  - "720 multitrack"
+  - kids
+  - children
+
+location:
+  postal_code: "94559"   # Napa
+  radius_miles: 75       # applies to Craigslist region + eBay pickup filter
+
+sources:
+  craigslist:
+    enabled: true
+    subdomains: ["sfbay", "sacramento"]   # covers the 75-mile radius
+    category: "bia"                        # all bicycles (owner + dealer)
+    fetch_listing_pages: true              # fetch full text for size/exclusion checks
+    max_page_fetches: 25                   # per run, politeness cap
+  ebay:
+    enabled: true
+    client_id: ""        # or env EBAY_CLIENT_ID
+    client_secret: ""    # or env EBAY_CLIENT_SECRET
+    # Frames ship cheap and these models are rare — searching nationally with
+    # shipping included is usually the right call. Set true to restrict to
+    # local pickup within radius_miles of postal_code.
+    local_pickup_only: false
+
+notify:
+  discord_webhook: ""    # or env DISCORD_WEBHOOK_URL
+
+storage:
+  # JSON file of already-seen listing hashes; committed back to the repo by
+  # the GitHub Actions workflow so state survives between runs.
+  seen_path: "seen.json"

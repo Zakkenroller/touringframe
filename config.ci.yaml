@@ -1,0 +1,59 @@
+# CI config used by the GitHub Actions workflow. Secrets come from repo
+# secrets via env vars; everything else mirrors config.example.yaml.
+targets:
+  - name: "Trek 720"
+    pattern: '\btrek\b.{0,40}\b720\b(?!\d)'
+  - name: "Bridgestone T-700"
+    pattern: '\bt[-\s]?700\b(?!c)'
+  - name: "Bridgestone 400"
+    pattern: '\bbridgestone\b.{0,40}\b400\b(?!\d)'
+  - name: "Miyata 1000"
+    pattern: '\bmiyata\b.{0,40}\b1000\s?(lt)?\b'
+
+queries:
+  - "Trek 720"
+  - "Bridgestone T700"
+  - "Bridgestone touring"
+  - "Miyata 1000"
+  - "vintage touring frame"
+
+sizing:
+  cm_values: [55, 56, 57]
+  inch_values: ["22", "22.5"]
+  unknown_size: notify
+
+exclusions:
+  - carbon
+  - aluminum
+  - alloy frame
+  - fixie
+  - single speed
+  - singlespeed
+  - track bike
+  - "7200"
+  - "720 multitrack"
+  - kids
+  - children
+
+location:
+  postal_code: "94559"
+  radius_miles: 75
+
+sources:
+  craigslist:
+    enabled: true
+    subdomains: ["sfbay", "sacramento"]
+    category: "bia"
+    fetch_listing_pages: true
+    max_page_fetches: 25
+  ebay:
+    enabled: true
+    client_id: ""      # from EBAY_CLIENT_ID secret
+    client_secret: ""  # from EBAY_CLIENT_SECRET secret
+    local_pickup_only: false
+
+notify:
+  discord_webhook: ""  # from DISCORD_WEBHOOK_URL secret
+
+storage:
+  seen_path: "seen.json"
